@@ -23,6 +23,7 @@ class JdspiderSpider(scrapy.Spider):
         # 遍历每一个商品
         for good in goods_list:
             item = JdSpiderItem()
+            item['GoodName'] = self.GoodName
             # 爬取商品标题
             title = good.xpath('div/div[@class="p-name p-name-type-2"]/a/em/text()').extract()
             Good_title = ''
@@ -50,26 +51,31 @@ class JdspiderSpider(scrapy.Spider):
             item['Good_price'] = Good_price
             item['Good_url'] = Good_url
             # url创建请求 传递数据
-            yield Request(url='http://club.jd.com/clubservice.aspx?method=GetCommentsCount&referenceIds='+Good_id, callback=self.parse_getCommentnum,meta={'item':item})
+            yield Request(url='http://club.jd.com/clubservice.aspx?method=GetCommentsCount&referenceIds='+Good_id, callback=self.parse_getCommentnum,meta={'item':item},dont_filter=True)
 
     def parse_getCommentnum(self,response):
         item1 = response.meta['item']
-        # response.body是一个json格式的
-        js = json.loads(str(response.body))
+
+        temp = r"""f{response.text}"""
+        js = json.loads(temp,strict=False)
         Good_commentCount = js['CommentsCount'][0]['Score5Count']
         item1['Good_commentCount'] = Good_commentCount
 
+        print(Good_commentCount)
+
         id = item1['Good_id']
-        yield Request(url="https://item-soa.jd.com/getWareBusiness?callback=jQuery364464&skuId=" + id, callback=self.parse_intro, meta={'item': item1})
+        yield Request(url="https://item-soa.jd.com/getWareBusiness?callback=jQuery364464&skuId=" + id, callback=self.parse_intro, meta={'item': item1},dont_filter=True)
 
 
     def parse_intro(self,response):
         item = response.meta['item']
-        temp = response.body.split('jQuery364464(')
-        s = temp[:-1]  # 获取到需要的json内容
-        js = json.loads(str(s))
-        Good_brand = js['wareInfo.brandName']
-        Good_name = js['wareInfo.wname']
+        temp = response.text.split('jQuery364464(')[1][:-1]
+        js = json.loads(temp,strict=False)
+        Good_brand = js['wareInfo']['brandName']
+        Good_name = js['wareInfo']['model']
+
+        print(Good_brand)
+        print(Good_name)
 
         item['Good_brand'] = Good_brand
         item['Good_name'] = Good_name

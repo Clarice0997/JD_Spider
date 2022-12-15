@@ -34,6 +34,7 @@
 
 | 字段名 | 数据类型 | 字段描述 |
 | ----- | ----- | ----- |
+| GoodName | Numbers | 爬取商品名 |
 | Good_id | Numbers | 商品ID |
 | Good_title | String | 商品标题 |
 | Good_price | Numbers | 商品价格 |

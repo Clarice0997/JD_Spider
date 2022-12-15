@@ -7,6 +7,7 @@ import scrapy
 
 
 class JdSpiderItem(scrapy.Item):
+    GoodName = scrapy.Field()
     Good_id = scrapy.Field()
     Good_title = scrapy.Field()
     Good_price = scrapy.Field()
