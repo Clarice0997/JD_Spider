@@ -4,10 +4,29 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
+from selenium import webdriver
+import time
+from scrapy.http import HtmlResponse
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 
+class SeleniumMiddleware:
+    def __init__(self):
+        self.driver = webdriver.Chrome()
+        self.driver.maximize_window()
+
+    def __del__(self):
+        self.driver.quit()
+
+    def process_request(self,request,spider):
+        self.driver.get(request.url)
+        if 'serach.jd.com' in request.url:
+            for i in range(1,6):
+                self.driver.execute_script(f'window.scrollTo(0,document.body.scrollHeight*{i}/5);')
+                time.sleep(0.5)
+            source = self.driver.page_source
+            return HtmlResponse(url=request.url,body=source,encoding='utf-8',request=request)
 
 class JdSpiderSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,

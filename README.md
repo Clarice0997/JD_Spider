@@ -30,6 +30,8 @@
 
 ## 数据结构设计
 
+### 爬取字段数据结构
+
 | 字段名 | 数据类型 | 字段描述 |
 | ----- | ----- | ----- |
 | Good_title | String | 商品标题 |
@@ -39,6 +41,12 @@
 | Good_name | String | 商品名称 |
 | Good_commentCount | Numbers | 商品评论数 |
 | Good_comment | List | 商品评价文本 |
+
+### 程序数据结构
+
+| 字段名 | 数据类型 | 字段描述 |
+| ----- | ----- | ----- |
+| GoodName | String | 爬取商品名 |
 
 ---
 
