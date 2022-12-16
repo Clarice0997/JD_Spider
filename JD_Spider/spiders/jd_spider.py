@@ -51,34 +51,52 @@ class JdspiderSpider(scrapy.Spider):
             item['Good_price'] = Good_price
             item['Good_url'] = Good_url
             # url创建请求 传递数据
-            yield Request(url='http://club.jd.com/clubservice.aspx?method=GetCommentsCount&referenceIds='+Good_id, callback=self.parse_getCommentnum,meta={'item':item},dont_filter=True)
-
-    def parse_getCommentnum(self,response):
-        item1 = response.meta['item']
-
-        temp = r"""f{response.text}"""
-        js = json.loads(temp,strict=False)
-        Good_commentCount = js['CommentsCount'][0]['Score5Count']
-        item1['Good_commentCount'] = Good_commentCount
-
-        print(Good_commentCount)
-
-        id = item1['Good_id']
-        yield Request(url="https://item-soa.jd.com/getWareBusiness?callback=jQuery364464&skuId=" + id, callback=self.parse_intro, meta={'item': item1},dont_filter=True)
-
+            yield Request(url="https://item-soa.jd.com/getWareBusiness?callback=jQuery364464&skuId=" + Good_id, callback=self.parse_intro, meta={'item': item}, dont_filter=True)
 
     def parse_intro(self,response):
+        # 处理解析json
         item = response.meta['item']
         temp = response.text.split('jQuery364464(')[1][:-1]
         js = json.loads(temp,strict=False)
+        # 爬取品牌名和商品型号
         Good_brand = js['wareInfo']['brandName']
         Good_name = js['wareInfo']['model']
+        # 如果不存在商品型号，则使用标题
+        if(Good_name == ''):
+            Good_name = js['wareInfo']['wname']
 
         print(Good_brand)
         print(Good_name)
 
         item['Good_brand'] = Good_brand
         item['Good_name'] = Good_name
+
+        # 存储item
+        id = item['Good_id']
+        url = f'https://sclub.jd.com/productpage/p-{id}-s-0-t-3-p-1.html'
+
+        yield Request(url=url, callback=self.parse_comment, meta={'item': item},dont_filter=True)
+
+    def parse_comment(self,response):
+        # 处理解析json
+        item = response.meta['item']
+        js = json.loads(response.text,strict=False)
+        comments = js['comments']
+        Good_comment = ''
+        # 爬取评论
+        for comment in comments:
+            print(comment['content'])
+            Good_comment = Good_comment + comment['content'] + '/'
+        print(Good_comment)
+        # 爬取好评评价数
+        Good_commentCount = js['productCommentSummary']['score5Count']
+
+        print(Good_commentCount)
+        print(Good_comment)
+
+        # 存储item
+        item['Good_commentCount'] = Good_commentCount
+        item['Good_comment'] = Good_comment
 
         yield item
 

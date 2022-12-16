@@ -6,6 +6,11 @@ import multiprocessing
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 import psutil
+from PIL import Image, ImageTk
+import pymongo
+import jieba
+import wordcloud
+
 
 # 运行爬虫按钮点击事件
 def runSpiderHandler(*args):
@@ -15,8 +20,8 @@ def runSpiderHandler(*args):
         # 判断商品名是否为空
         if GoodName.strip() == '':
             print('商品名为空')
+            return
         else:
-            print('商品名不为空')
             # 赋值
             lable_value.set('运行状态：运行中')
             print(f'爬取商品关键词：{GoodName}')
@@ -37,16 +42,60 @@ def runSpiderHandler(*args):
         lable_value.set('运行状态：爬取失败')
         pass
 
+
 # 运行爬虫函数
 def startCrawl(GoodName):
     process = CrawlerProcess(get_project_settings())
     process.crawl('jd_spider', GoodName)
     process.start()
 
+
 # 绘制词云图函数
 def drawWordle(GoodName):
     # 连接MongoDB数据库
-    pass
+    host = 'localhost'
+    port = 27017
+    db_name = 'JDShop'
+    client = pymongo.MongoClient(host=host, port=port)
+    db = client[db_name]
+    collection = db['Goods']
+
+    # 定义变量
+    maxCommentCount = 0
+    queryModel = ''
+    commentStr = ''
+
+    # 查询最高评论数
+    for item in collection.aggregate([{"$match": {"GoodName": GoodName}},
+                                      {"$group": {"_id": "$GoodName", "maxComment": {"$max": "$Good_commentCount"}}}]):
+        maxCommentCount = item['maxComment']
+
+    # 查询最高评论数商品名
+    for item in collection.find({"GoodName": GoodName,"Good_commentCount": maxCommentCount}).limit(1):
+        queryModel = item['Good_name']
+
+    # 根据最高评论数商品名查询评论数据
+    for item in collection.find({"GoodName": GoodName,"Good_name": queryModel}).limit(3):
+        commentStr = commentStr + item['Good_comment']
+
+    # 中文分词
+    ls = jieba.lcut(commentStr)
+    text = ' '.join(ls)
+    # 过滤词
+    stopwords = ["的", "是", "了", "说", "和", "很", "就", "你", "也", "还", "就是", "还是", "而且", "可以", "非常",
+                 "找", '更', "都", "等等", '按', '给']
+
+    # 实例化词云
+    wc = wordcloud.WordCloud(font_path="msyh.ttc", width=580, height=330, background_color='white', max_words=20,
+                             stopwords=stopwords)
+    wc.generate(text)  # 加载词云文本
+    wc.to_file("词云图.png")  # 保存词云文件
+
+    img_open = Image.open("词云图.png")
+    img_png = ImageTk.PhotoImage(img_open.resize((580, 330)))
+    Label(root_window, image=img_png).grid(row=2, column=0, columnspan=3, sticky=E)
+    lable_value.set('运行状态：分析完毕')
+
 
 # 函数线程守护 避免tkinter界面卡死
 def thread_it(func, *args):
@@ -56,6 +105,7 @@ def thread_it(func, *args):
     t.daemon = True
     # 启动
     t.start()
+
 
 # 初始化图形界面函数
 def init_GUI():
@@ -73,21 +123,23 @@ def init_GUI():
     # 关闭窗口拉伸
     root_window.resizable(False, False)
     # 商品名输入框
-    global searchGoodName,goodNameInput
+    global searchGoodName, goodNameInput
     Label(root_window, text="请输入要爬取的商品名：", font=('微软雅黑', 12)).grid(row=0, column=0)
     searchGoodName = StringVar()
     goodNameInput = Entry(root_window, width=45, textvariable=searchGoodName).grid(row=0, column=1)
     # 爬虫按钮
-    Button(root_window, width=10, text="爬取数据", command=lambda: thread_it(runSpiderHandler)).grid(row=0, column=2, sticky=E)
+    Button(root_window, width=10, text="爬取数据", command=lambda: thread_it(runSpiderHandler)).grid(row=0, column=2,
+                                                                                                     sticky=E)
 
     # 处理状态
     global lable_value
     lable_value = StringVar()
     lable_value.set('运行状态：未启动')
-    Label(root_window, textvariable=lable_value,font=('微软雅黑', 12)).grid(row=1, column=0, sticky=W)
+    Label(root_window, textvariable=lable_value, font=('微软雅黑', 12)).grid(row=1, column=0, sticky=W)
 
     # 开启主循环，让窗口处于显示状态
     root_window.mainloop()
+
 
 # 主函数
 if __name__ == "__main__":

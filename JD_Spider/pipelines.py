@@ -7,31 +7,6 @@
 # useful for handling different item types with a single interface
 import pymongo
 
-# class JdMongodbPipeline:
-#     def open_spider(self, spider):
-#         self.conn = pymongo.MongoClient()
-#         self.db = self.conn['JD_shop']
-#         self.collection = self.db['JD_Goods']
-#
-#     def process_item(self, item, spider):
-#         document = {
-#             '商品ID': item['Good_id'],
-#             '商品标题': item['Good_title'],
-#             '商品价格': item['Good_price'],
-#             '商品URL': item['Good_url'],
-#             '商品品牌': item['Good_brand'],
-#             '店铺名': item['Good_shopName'],
-#             '商品名称': item['Good_name'],
-#             '商品评论数': item['Good_commentCount'],
-#         }
-#         self.collection.update_one(document, {'$set': document}, upsert=True)
-#         return item
-#
-#     def close_spider(self, spider):
-#         print('MongoDB存储完成')
-#         self.conn.close()
-
-
 class JdMongodbPipeline:
     def open_spider(self, spider):
         host = 'localhost'
