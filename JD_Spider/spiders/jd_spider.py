@@ -10,6 +10,7 @@ class JdspiderSpider(scrapy.Spider):
     allowed_domains = ['jd.com','3.cn']
 
     def __init__(self,GoodName):
+        # 获得GUI传的商品名
         self.GoodName = GoodName
 
     # 自定义发起请求
@@ -65,16 +66,18 @@ class JdspiderSpider(scrapy.Spider):
         if(Good_name == ''):
             Good_name = js['wareInfo']['wname']
 
-        print(Good_brand)
-        print(Good_name)
+        print(f'商品品牌：{Good_brand}')
+        print(f'商品名：{Good_name}')
 
+        # 存储item
         item['Good_brand'] = Good_brand
         item['Good_name'] = Good_name
 
-        # 存储item
+        # 拼接评论URL
         id = item['Good_id']
         url = f'https://sclub.jd.com/productpage/p-{id}-s-0-t-3-p-1.html'
 
+        # url创建请求 传递数据
         yield Request(url=url, callback=self.parse_comment, meta={'item': item},dont_filter=True)
 
     def parse_comment(self,response):
@@ -91,8 +94,8 @@ class JdspiderSpider(scrapy.Spider):
         # 爬取好评评价数
         Good_commentCount = js['productCommentSummary']['score5Count']
 
-        print(Good_commentCount)
-        print(Good_comment)
+        print(f'评论数：{Good_commentCount}')
+        print(f'商品评论：{Good_comment}')
 
         # 存储item
         item['Good_commentCount'] = Good_commentCount

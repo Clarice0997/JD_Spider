@@ -23,6 +23,7 @@ class SeleniumMiddleware:
 
     def process_request(self,request,spider):
         self.driver.get(request.url)
+        # 搜索页面随机下滑
         if 'serach.jd.com' in request.url:
             for i in range(1,6):
                 self.driver.execute_script(f'window.scrollTo(0,document.body.scrollHeight*{i}/5);')
